@@ -182,7 +182,8 @@ void ZoneDatabase::AddLootDropToNPC(NPC *npc, uint32 lootdrop_id, ItemList* item
 	}
 
 	float roll_t = 0.0f;
-	float roll_t_min = 0.0f;
+	float no_loot_prob = 1.0f;
+	bool  roll_table_chance_bypass = false;
 	bool active_item_list = false;
 
 	for (uint32 i = 0; i < loot_drop->NumEntries; ++i) {
@@ -194,6 +195,7 @@ void ZoneDatabase::AddLootDropToNPC(NPC *npc, uint32 lootdrop_id, ItemList* item
 
 		uint32 itemid = loot_drop->Entries[i].item_id;
 		int8 charges = loot_drop->Entries[i].item_charges;
+		float chance = loot_drop->Entries[i].chance;
 		const EQ::ItemData* db_item = GetItem(itemid);
 		if (database.ItemQuantityType(itemid) == EQ::item::Quantity_Charges)
 		{
@@ -201,161 +203,70 @@ void ZoneDatabase::AddLootDropToNPC(NPC *npc, uint32 lootdrop_id, ItemList* item
 				charges = db_item->MaxCharges;
 		}
 		if (db_item) {
-			roll_t += loot_drop->Entries[i].chance;
+			roll_t += chance;
+
+			if (chance >= 100) {
+				roll_table_chance_bypass = true;
+			}
+			else {
+				no_loot_prob *= (100 - chance) / 100.0f;
+			}
+
 			active_item_list = true;
 		}
 	}
-
-	roll_t_min = roll_t;
-	roll_t = EQ::ClampLower(roll_t, 100.0f);
 
 	if (!active_item_list) {
 		return;
 	}
 
-	for(int i = 0; i < mindrop; ++i) {
-		float roll = (float)zone->random.Real(0.0, roll_t_min);
-		for(uint32 j = 0; j < loot_drop->NumEntries; ++j) {
-			bool min_expansion_enabled = RuleR(World, CurrentExpansion) >= loot_drop->Entries[j].min_expansion;
-			bool max_expansion_enabled = RuleR(World, CurrentExpansion) < loot_drop->Entries[j].max_expansion;
-			bool expansion_all = loot_drop->Entries[j].min_expansion == ExpansionEras::AllEQEras;
-			if (!expansion_all && (!min_expansion_enabled || !max_expansion_enabled))
-				continue;
+	int drops = 0;
 
-			uint32 itemid = loot_drop->Entries[j].item_id;
-			int8 charges = loot_drop->Entries[j].item_charges;
-			const EQ::ItemData* db_item = GetItem(itemid);
-			if (database.ItemQuantityType(itemid) == EQ::item::Quantity_Charges)
-			{
-				if (charges <= 1)
-					charges = db_item->MaxCharges;
-			}
-			if (db_item) {
-				if(roll < loot_drop->Entries[j].chance) {
-					bool force_equip = loot_drop->Entries[j].equip_item == 2;
-					npc->AddLootDrop(db_item, itemlist, charges, loot_drop->Entries[j].minlevel,
-									 loot_drop->Entries[j].maxlevel, loot_drop->Entries[j].equip_item > 0 ? true : false, false, false, false, force_equip, loot_drop->Entries[j].min_looter_level, loot_drop->Entries[j].item_loot_lockout_timer);
+	for(int i = 0; i < droplimit; ++i) {
+		if (drops < mindrop || roll_table_chance_bypass || (float) zone->random.Real(0.0, 1.0) >= no_loot_prob) {
+			float roll = (float)zone->random.Real(0.0, roll_t);
+		
+			for(uint32 j = 0; j < loot_drop->NumEntries; ++j) {
+				bool min_expansion_enabled = RuleR(World, CurrentExpansion) >= loot_drop->Entries[j].min_expansion;
+				bool max_expansion_enabled = RuleR(World, CurrentExpansion) < loot_drop->Entries[j].max_expansion;
+				bool expansion_all = loot_drop->Entries[j].min_expansion == ExpansionEras::AllEQEras;
+				if (!expansion_all && (!min_expansion_enabled || !max_expansion_enabled))
+					continue;
 
-					int multiplier = (int)loot_drop->Entries[j].multiplier;
-					multiplier = EQ::ClampLower(multiplier, 1);
-
-					for (int k = 1; k < multiplier; ++k) {
-						float c_roll = (float)zone->random.Real(0.0, 100.0);
-						if(c_roll <= loot_drop->Entries[j].chance) {
-							bool force_equip = loot_drop->Entries[j].equip_item == 2;
-							npc->AddLootDrop(db_item, itemlist, charges, loot_drop->Entries[j].minlevel,
-											 loot_drop->Entries[j].maxlevel, loot_drop->Entries[j].equip_item > 0 ? true : false, false, false, false, force_equip, loot_drop->Entries[j].min_looter_level, loot_drop->Entries[j].item_loot_lockout_timer);
-						}
-					}
-
-					j = loot_drop->NumEntries;
-					break;
-				}
-				else {
-					roll -= loot_drop->Entries[j].chance;
-				}
-			}
-		}
-	}
-
-	// drop limit handling has two loops to ensure that the table drop %s are indicative of what is seen in-game
-	if ((droplimit - mindrop) == 1)
-	{
-		float roll = (float)zone->random.Real(0.0, roll_t);
-		for (uint32 j = 0; j < loot_drop->NumEntries; ++j)
-		{
-			bool min_expansion_enabled = RuleR(World, CurrentExpansion) >= loot_drop->Entries[j].min_expansion;
-			bool max_expansion_enabled = RuleR(World, CurrentExpansion) < loot_drop->Entries[j].max_expansion;
-			bool expansion_all = loot_drop->Entries[j].min_expansion == ExpansionEras::AllEQEras;
-			
-			if (!expansion_all && (!min_expansion_enabled || !max_expansion_enabled))
-				continue;
-
-			uint32 itemid = loot_drop->Entries[j].item_id;
-			int8 charges = loot_drop->Entries[j].item_charges;
-			const EQ::ItemData* db_item = GetItem(itemid);
-			if (database.ItemQuantityType(itemid) == EQ::item::Quantity_Charges)
-			{
-				if (charges <= 1)
-					charges = db_item->MaxCharges;
-			}
-			if (db_item) {
-				if (roll < loot_drop->Entries[j].chance) {
-					bool force_equip = loot_drop->Entries[j].equip_item == 2;
-					npc->AddLootDrop(db_item, itemlist, charges, loot_drop->Entries[j].minlevel,
-						loot_drop->Entries[j].maxlevel, loot_drop->Entries[j].equip_item > 0 ? true : false, false, false, false, force_equip, loot_drop->Entries[j].min_looter_level, loot_drop->Entries[j].item_loot_lockout_timer);
-
-					int multiplier = (int)loot_drop->Entries[j].multiplier;
-					multiplier = EQ::ClampLower(multiplier, 1);
-
-					for (int k = 1; k < multiplier; ++k) {
-						float c_roll = (float)zone->random.Real(0.0, 100.0);
-						if (c_roll <= loot_drop->Entries[j].chance) {
-							bool force_equip = loot_drop->Entries[j].equip_item == 2;
-							npc->AddLootDrop(db_item, itemlist, charges, loot_drop->Entries[j].minlevel,
-								loot_drop->Entries[j].maxlevel, loot_drop->Entries[j].equip_item > 0 ? true : false, false, false, false, force_equip, loot_drop->Entries[j].min_looter_level, loot_drop->Entries[j].item_loot_lockout_timer);
-						}
-					}
-					break;
-				}
-				else {
-					roll -= loot_drop->Entries[j].chance;
-				}
-			}
-		}
-	}
-	else if (droplimit > mindrop)
-	{
-		// If droplimit is 2 or more higher than mindrop, then we run this other loop.
-		// This can't be used on droplimit=mindrop+1 without actual drop rates being lower than what the table %s
-		// would indicate; however the above solution doesn't work well for droplimits greater than 1 above mindrop.
-		// This will not be as precise as the above loop but the deviation is greatly reduced as droplimit increases.
-		int dropCount = mindrop;
-		int i = zone->random.Int(0, loot_drop->NumEntries);
-		int loops = 0;
-
-		while (loops < loot_drop->NumEntries)
-		{
-			if (dropCount >= droplimit)
-				break;
-			bool min_expansion_enabled = RuleR(World, CurrentExpansion) >= loot_drop->Entries[i].min_expansion;
-			bool max_expansion_enabled = RuleR(World, CurrentExpansion) < loot_drop->Entries[i].max_expansion;
-			bool expansion_all = loot_drop->Entries[i].min_expansion == ExpansionEras::AllEQEras;
-
-			uint32 itemid = loot_drop->Entries[i].item_id;
-			int8 charges = loot_drop->Entries[i].item_charges;
-			const EQ::ItemData* db_item = GetItem(itemid);
-			if (database.ItemQuantityType(itemid) == EQ::item::Quantity_Charges)
-			{
-				if (charges <= 1)
-					charges = db_item->MaxCharges;
-			}
-			if (db_item && min_expansion_enabled && max_expansion_enabled || db_item && expansion_all)
-			{
-				if (zone->random.Real(0.0, 100.0) <= loot_drop->Entries[i].chance)
+				uint32 itemid = loot_drop->Entries[j].item_id;
+				int8 charges = loot_drop->Entries[j].item_charges;
+				const EQ::ItemData* db_item = GetItem(itemid);
+				if (database.ItemQuantityType(itemid) == EQ::item::Quantity_Charges)
 				{
-					bool force_equip = loot_drop->Entries[i].equip_item == 2;
-					npc->AddLootDrop(db_item, itemlist, charges, loot_drop->Entries[i].minlevel,
-						loot_drop->Entries[i].maxlevel, loot_drop->Entries[i].equip_item > 0 ? true : false, false, false, false, force_equip, loot_drop->Entries[i].min_looter_level, loot_drop->Entries[i].item_loot_lockout_timer);
+					if (charges <= 1)
+						charges = db_item->MaxCharges;
+				}
+				if (db_item) {
+					if(roll < loot_drop->Entries[j].chance) {
+						bool force_equip = loot_drop->Entries[j].equip_item == 2;
+						npc->AddLootDrop(db_item, itemlist, charges, loot_drop->Entries[j].minlevel,
+										loot_drop->Entries[j].maxlevel, loot_drop->Entries[j].equip_item > 0 ? true : false, false, false, false, force_equip, loot_drop->Entries[j].min_looter_level, loot_drop->Entries[j].item_loot_lockout_timer);
+						drops++;
 
-					int multiplier = (int)loot_drop->Entries[i].multiplier;
-					multiplier = EQ::ClampLower(multiplier, 1);
+						int multiplier = (int)loot_drop->Entries[j].multiplier;
+						multiplier = EQ::ClampLower(multiplier, 1);
 
-					for (int k = 1; k < multiplier; ++k) {
-						float c_roll = (float)zone->random.Real(0.0, 100.0);
-						if (c_roll <= loot_drop->Entries[i].chance) {
-							bool force_equip = loot_drop->Entries[i].equip_item == 2;
-							npc->AddLootDrop(db_item, itemlist, charges, loot_drop->Entries[i].minlevel,
-								loot_drop->Entries[i].maxlevel, loot_drop->Entries[i].equip_item > 0 ? true : false, false, false, false, force_equip, loot_drop->Entries[i].min_looter_level, loot_drop->Entries[i].item_loot_lockout_timer);
+						for (int k = 1; k < multiplier; ++k) {
+							float c_roll = (float)zone->random.Real(0.0, 100.0);
+							if(c_roll <= loot_drop->Entries[j].chance) {
+								bool force_equip = loot_drop->Entries[j].equip_item == 2;
+								npc->AddLootDrop(db_item, itemlist, charges, loot_drop->Entries[j].minlevel,
+												loot_drop->Entries[j].maxlevel, loot_drop->Entries[j].equip_item > 0 ? true : false, false, false, false, force_equip, loot_drop->Entries[j].min_looter_level, loot_drop->Entries[j].item_loot_lockout_timer);
+							}
 						}
+
+						break;
 					}
-					dropCount = dropCount + 1;
+					else {
+						roll -= loot_drop->Entries[j].chance;
+					}
 				}
 			}
-			i++;
-			if (i > loot_drop->NumEntries)
-				i = 0;
-			loops++;
 		}
 	}
 
