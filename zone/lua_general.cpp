@@ -550,11 +550,11 @@ void lua_set_anim(int npc_type, int anim_num) {
 }
 
 void lua_spawn_condition(const char *zone, int condition_id, int value) {
-	quest_manager.spawn_condition(zone, -1, condition_id, value);
+	quest_manager.spawn_condition(zone, 0xFFFFFFFF, condition_id, value);
 }
 
 int lua_get_spawn_condition(const char *zone, int condition_id) {
-	return quest_manager.get_spawn_condition(zone, -1, condition_id);
+	return quest_manager.get_spawn_condition(zone, 0xFFFFFFFF, condition_id);
 }
 
 void lua_toggle_spawn_event(int event_id, bool enable, bool strict, bool reset) {
