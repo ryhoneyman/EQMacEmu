@@ -141,6 +141,7 @@ public:
 	uint32	id;
 	uint16	condition_id;
 	std::string	zone_name;
+	uint32 instance_id;
 
 	bool	enabled;
 	Action	action;
