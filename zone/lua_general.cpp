@@ -550,12 +550,12 @@ void lua_set_anim(int npc_type, int anim_num) {
 	quest_manager.setanim(npc_type, anim_num);
 }
 
-void lua_spawn_condition(const char *zone, int condition_id, int value) {
-	quest_manager.spawn_condition(zone, zone->GetGuildID(), condition_id, value);
+void lua_spawn_condition(const char *zone_short_name, int condition_id, int value) {
+	quest_manager.spawn_condition(zone_short_name, zone->GetGuildID(), condition_id, value);
 }
 
-int lua_get_spawn_condition(const char *zone, int condition_id) {
-	return quest_manager.get_spawn_condition(zone, zone->GetGuildID(), condition_id);
+int lua_get_spawn_condition(const char *zone_short_name, int condition_id) {
+	return quest_manager.get_spawn_condition(zone_short_name, zone->GetGuildID(), condition_id);
 }
 
 void lua_toggle_spawn_event(int event_id, bool enable, bool strict, bool reset) {
