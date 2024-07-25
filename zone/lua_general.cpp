@@ -549,6 +549,14 @@ void lua_set_anim(int npc_type, int anim_num) {
 	quest_manager.setanim(npc_type, anim_num);
 }
 
+void lua_spawn_condition_instance(const char *zone, uint32 instance_id, int condition_id, int value) {
+	quest_manager.spawn_condition(zone, instance_id, condition_id, value);
+}
+
+int lua_get_spawn_condition_instance(const char *zone, uint32 instance_id, int condition_id) {
+	return quest_manager.get_spawn_condition(zone, instance_id, condition_id);
+}
+
 void lua_spawn_condition(const char *zone, int condition_id, int value) {
 	quest_manager.spawn_condition(zone, 0xFFFFFFFF, condition_id, value);
 }
@@ -1442,6 +1450,8 @@ luabind::scope lua_register_general() {
 		luabind::def("set_anim", &lua_set_anim),
 		luabind::def("spawn_condition", &lua_spawn_condition),
 		luabind::def("get_spawn_condition", &lua_get_spawn_condition),
+		luabind::def("spawn_condition_instance", &lua_spawn_condition_instance),
+		luabind::def("get_spawn_condition_instance", &lua_get_spawn_condition_instance),
 		luabind::def("toggle_spawn_event", &lua_toggle_spawn_event),
 		luabind::def("summon_burried_player_corpse", &lua_summon_burried_player_corpse),
 		luabind::def("summon_all_player_corpses", &lua_summon_all_player_corpses),
