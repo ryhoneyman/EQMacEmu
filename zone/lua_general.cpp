@@ -17,7 +17,7 @@
 #include "quest_parser_collection.h"
 #include "questmgr.h"
 #include "qglobals.h"
-#include "guilds.h"
+#include "../common/guilds.h"
 #include "../common/timer.h"
 #include "../common/eqemu_logsys.h"
 #include "../common/rulesys.h"
