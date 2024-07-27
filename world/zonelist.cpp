@@ -320,7 +320,7 @@ void ZSList::SendZoneStatus(const char* to, int16 admin, WorldTCPConnection* con
 		if (zone_server_data->GetZoneID())
 		{
 			std::ostringstream stream;
-			stream << "" << zone_server_data->GetZoneName() << " (" << zone_server_data->GetZoneID() << ")";
+			stream << "" << zone_server_data->GetZoneName() << " (" << zone_server_data->GetZoneID() << ") [" << zone_server_data->GetZoneGuildID() << "]";
 			zone_data_string = stream.str();
 		}
 		else if (zone_server_data->IsBootingUp())
