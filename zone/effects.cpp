@@ -1233,7 +1233,11 @@ void EntityList::AESpell(Mob *caster, Mob *center, uint16 spell_id, bool affect_
 				{
 
 					if(curmob->IsNPC())
+					{
 						++targets_hit;
+						Log(Logs::Detail, Logs::Spells, "Non-limited AE Spell: %d [#%d/%d]", spell_id, targets_hit, MAX_TARGETS_ALLOWED);
+					}
+
 					if (targets_hit >= MAX_TARGETS_ALLOWED)
 						break;
 				}
