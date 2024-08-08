@@ -1038,7 +1038,7 @@ bool Corpse::Process() {
 		CompleteResurrection(true);
 		
 		if (RuleB(Quarm, CorpseWillNotDecayIfRezzable) && IsEmpty() && !corpse_decay_timer.Check())
-			corpse_decay_timer.Start(1000);
+			corpse_decay_timer.Start(1000,true);
 	}	
 
 	/* This is when a corpse hits decay timer and does checks*/
