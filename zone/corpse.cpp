@@ -1036,6 +1036,9 @@ bool Corpse::Process() {
 	if(corpse_rez_timer.Check()) 
 	{
 		CompleteResurrection(true);
+		
+		if (RuleB(Quarm, CorpseWillNotDecayIfRezzable) && IsEmpty() && !corpse_decay_timer.Check())
+			corpse_decay_timer.Start(1000);
 	}	
 
 	/* This is when a corpse hits decay timer and does checks*/
@@ -1050,6 +1053,13 @@ bool Corpse::Process() {
 		else
 		{
 			/* Client */
+			if (RuleB(Quarm, CorpseWillNotDecayIfRezzable) && IsEmpty() && IsRezzable())
+			{
+				// We will disable the decay timer, and let the rez timer handle the work
+				corpse_decay_timer.Disable();
+				return true;
+			}
+			
 			if (!RuleB(Zone, EnableShadowrest)) 
 			{
 				Delete();

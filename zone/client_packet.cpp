@@ -3617,7 +3617,7 @@ void Client::Handle_OP_ConsiderCorpse(const EQApplicationPacket *app)
 		}
 	}
 	else if (tcorpse && tcorpse->IsPlayerCorpse()) {
-		uint32 day, hour, min, sec, ttime;
+		uint32 day, hour, min, sec, ttime, decaytime;
 		if (tcorpse->IsRezzable() && (ttime = tcorpse->GetRemainingRezTime()) > 0)
 		{
 			sec = (ttime / 1000) % 60; // Total seconds
@@ -3633,11 +3633,13 @@ void Client::Handle_OP_ConsiderCorpse(const EQApplicationPacket *app)
 		else
 			Message(Chat::White, "This corpse is too old to be resurrected.");
 
-		if ((ttime = tcorpse->GetDecayTime()) != 0) {
-			sec = (ttime / 1000) % 60; // Total seconds
-			min = (ttime / 60000) % 60; // Total seconds
-			hour = (ttime / 3600000) % 24; // Total hours
-			day = ttime / 86400000; // Total Days
+		decaytime = (RuleB(Quarm, CorpseWillNotDecayIfRezzable) && tcorpse->IsRezzable() && tcorpse->IsEmpty()) ? tcorpse->GetRemainingRezTime() : tcorpse->GetDecayTime();
+			
+		if (decaytime != 0) {
+			sec = (decaytime / 1000) % 60; // Total seconds
+			min = (decaytime / 60000) % 60; // Total seconds
+			hour = (decaytime / 3600000) % 24; // Total hours
+			day = decaytime / 86400000; // Total Days
 			if (day)
 				Message(Chat::White, "This corpse will decay in %i day(s) %i hour(s) %i minute(s) and %i seconds.", day, hour, min, sec);
 			else if (hour)

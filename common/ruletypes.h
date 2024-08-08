@@ -283,6 +283,7 @@ RULE_REAL(Quarm, BonusGroupEXP4MemberOverride, 1.10, "Quarm's custom group EXP b
 RULE_REAL(Quarm, BonusGroupEXP5MemberOverride, 1.14, "Quarm's custom group EXP bonus override for x members. For server events that directly target group bonuses.")
 RULE_REAL(Quarm, BonusGroupEXP6MemberOverride, 1.20, "Quarm's custom group EXP bonus override for x members. For server events that directly target group bonuses.")
 RULE_REAL(Quarm, BonusGroupEXP7MemberOverride, 1.24, "Quarm's custom group EXP bonus override for x members. For server events that directly target group bonuses.")
+RULE_BOOL(Quarm, CorpseWillNotDecayIfRezzable, true, "Do not allow rezzable corpses to decay.")
 RULE_CATEGORY_END()
 RULE_CATEGORY( Map )
 //enable these to help prevent mob hopping when they are pathing
