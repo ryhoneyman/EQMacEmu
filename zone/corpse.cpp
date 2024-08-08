@@ -243,6 +243,7 @@ Corpse::Corpse(NPC* in_npc, LootItems* in_itemlist, uint32 in_npctypeid, uint32 
 
 	if (IsEmpty() && in_decaytime > RuleI(NPC, EmptyNPCCorpseDecayTimeMS))
 	{
+		Log(Logs::Detail, Logs::Corpse, "Starting decay %d for %s",RuleI(NPC, EmptyNPCCorpseDecayTimeMS) + 1000,GetName());
 		corpse_decay_timer.Start(RuleI(NPC, EmptyNPCCorpseDecayTimeMS) + 1000);
 	}
 	
@@ -1012,11 +1013,13 @@ bool Corpse::Process() {
 	//Player is offline. If rez timer is enabled, disable it and save corpse.
 	if(!is_owner_online && rezzable)
 	{
+		Log(Logs::Detail, Logs::Corpse, "Player not online, but rezzable for %s", GetName());
 		if(corpse_rez_timer.Enabled())
-		{
+		{	
 			rez_time = corpse_rez_timer.GetRemainingTime();
 			corpse_rez_timer.Disable();
 			is_corpse_changed = true;
+			Log(Logs::Detail, Logs::Corpse, "Disable rez timer, rez_time:%d saving for %s", rez_time, GetName());
 			Save();
 		}
 	}
@@ -1035,15 +1038,22 @@ bool Corpse::Process() {
 
 	if(corpse_rez_timer.Check()) 
 	{
+		Log(Logs::Detail, Logs::Corpse, "Checking rez timer expired for %s", GetName());
 		CompleteResurrection(true);
 		
+		Log(Logs::Detail, Logs::Corpse, "Name:%s IsEmpty:%d CorpseDecayTimerCheck:%d", GetName(),IsEmpty(),corpse_decay_timer.Check());
+		
 		if (RuleB(Quarm, CorpseWillNotDecayIfRezzable) && IsEmpty() && !corpse_decay_timer.Check())
-			corpse_decay_timer.Start(1000,true);
+		{
+			Log(Logs::Detail, Logs::Corpse, "Empty, non-rezzable, decay expired timer for %s", GetName());
+			corpse_decay_timer.Start(1000);
+		}
 	}	
 
 	/* This is when a corpse hits decay timer and does checks*/
 	if (corpse_decay_timer.Check()) 
 	{
+		Log(Logs::Detail, Logs::Corpse, "Check decay timer expired for %s", GetName());
 		/* NPC */
 		if (IsNPCCorpse())
 		{
@@ -1056,6 +1066,7 @@ bool Corpse::Process() {
 			if (RuleB(Quarm, CorpseWillNotDecayIfRezzable) && IsEmpty() && IsRezzable())
 			{
 				// We will disable the decay timer, and let the rez timer handle the work
+				Log(Logs::Detail, Logs::Corpse, "Empty, but rezzable corpse decay timer stopped for %s", GetName());
 				corpse_decay_timer.Disable();
 				return true;
 			}
@@ -1066,8 +1077,11 @@ bool Corpse::Process() {
 			}
 			else 
 			{
+				Log(Logs::Detail, Logs::Corpse, "Burying %s", GetName());
 				Bury();
 			}
+			
+			Log(Logs::Detail, Logs::Corpse, "Corpse decay timer stopped for %s", GetName());
 			corpse_decay_timer.Disable();
 			return false;
 		}
@@ -1078,9 +1092,15 @@ bool Corpse::Process() {
 
 void Corpse::SetDecayTimer(uint32 decaytime) {
 	if (decaytime == 0)
+	{
+		Log(Logs::Detail, Logs::Corpse, "Decay timer triggered for %s", GetName());
 		corpse_decay_timer.Trigger();
+	}
 	else
+	{
+		Log(Logs::Detail, Logs::Corpse, "Decay timer started decaytime:%d for %s", decaytime, GetName());
 		corpse_decay_timer.Start(decaytime);
+	}
 }
 
 bool Corpse::CanPlayerLoot(std::string playername) {
@@ -2169,11 +2189,15 @@ void Corpse::LoadPlayerCorpseDecayTime(uint32 corpse_db_id, bool empty){
 	{
 		corpse_decay = RuleI(Character, CorpseDecayTimeMS);
 	}
+	
+	Log(Logs::Detail, Logs::Corpse, "Load decay time active_corpse_decay_timer:%d corpse_decay:%d for %s", active_corpse_decay_timer, corpse_decay, GetName());
 
 	if (active_corpse_decay_timer > 0 && corpse_decay > (active_corpse_decay_timer * 1000)) {
+		Log(Logs::Detail, Logs::Corpse, "Starting decay %d for %s", corpse_decay - (active_corpse_decay_timer * 1000), GetName());
 		corpse_decay_timer.Start(corpse_decay - (active_corpse_decay_timer * 1000));
 	}
 	else {
+		Log(Logs::Detail, Logs::Corpse, "Starting decay 2000 for %s",GetName());
 		corpse_decay_timer.Start(2000);
 	}
 	if (active_corpse_decay_timer > 0 && (zone->graveyard_timer() * 60000) > (active_corpse_decay_timer * 1000)) {
