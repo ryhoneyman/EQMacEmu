@@ -1013,7 +1013,6 @@ bool Corpse::Process() {
 	//Player is offline. If rez timer is enabled, disable it and save corpse.
 	if(!is_owner_online && rezzable)
 	{
-		Log(Logs::Detail, Logs::Corpse, "Player not online, but rezzable for %s", GetName());
 		if(corpse_rez_timer.Enabled())
 		{	
 			rez_time = corpse_rez_timer.GetRemainingTime();
