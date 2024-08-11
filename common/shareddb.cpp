@@ -776,6 +776,8 @@ void SharedDatabase::LoadItems(void *data, uint32 size, int32 items, uint32 max_
 		{
 			// item is stackable
 			item.StackSize = 20;
+			item.Stackable = true;
+			item.Stackable_ = 1;
 		}
 		else
 		{
