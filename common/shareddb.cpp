@@ -728,7 +728,7 @@ void SharedDatabase::LoadItems(void *data, uint32 size, int32 items, uint32 max_
 
 		// solar - fixup StackSize data
 		// TODO: this StackSize field in the database is not needed, and code referencing StackSize should be rewritten to determine stackability based on the following conditions.  stack size is always 20.
-		if
+		/*if
 			(
 				item.ItemClass == EQ::item::ItemClass::ItemClassCommon &&
 				item.MaxCharges > 0 &&
@@ -752,7 +752,7 @@ void SharedDatabase::LoadItems(void *data, uint32 size, int32 items, uint32 max_
 		{
 			// item is not stackable
 			item.StackSize = 1;
-		}
+		}*/
 
 		// solar - fixup StackSize data
 		// TODO: this StackSize field in the database is not needed, and code referencing StackSize should be rewritten to determine stackability based on the following conditions.  stack size is always 20.
@@ -769,7 +769,8 @@ void SharedDatabase::LoadItems(void *data, uint32 size, int32 items, uint32 max_
 					item.ItemType == EQ::item::ItemTypeArrow ||
 					item.ItemType == EQ::item::ItemTypeUnknown4 ||
 					item.ItemType == EQ::item::ItemTypeFishingBait ||
-					item.ItemType == EQ::item::ItemTypeAlcohol
+					item.ItemType == EQ::item::ItemTypeAlcohol ||
+					item.ItemType == EQ::item::ItemTypeSpell
 				)
 			)
 		{
