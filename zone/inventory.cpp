@@ -1560,6 +1560,8 @@ bool Client::SwapItem(MoveItem_Struct* move_in) {
 			return true;
 		}
 	}
+	
+	Log(Logs::General, Logs::Inventory, "Move from %d to %d with stack size %d. %s stackable(%d) stacksize(%d) charges(%d)", src_slot_id, dst_slot_id, move_in->number_in_stack, src_inst->GetItem()->Name, src_inst->IsStackable(), src_inst->GetItem()->StackSize, src_inst->GetCharges());
 
 	// Step 5: Swap (or stack) items
 	if (move_in->number_in_stack > 0) {
