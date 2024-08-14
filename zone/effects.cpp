@@ -1009,56 +1009,74 @@ void EntityList::AESpell(Mob *caster, Mob *center, uint16 spell_id, bool affect_
 	float dist2 = dist * dist;
 	float dist_targ = 0;
 
-	bool detrimental = IsDetrimentalSpell(spell_id);
+	bool detrimental  = IsDetrimentalSpell(spell_id);
 	bool clientcaster = caster->IsClient();
-	int MAX_TARGETS_ALLOWED = 5;
 
 	// Wizard's Al'Kabor line of spells hits 5 targets.
 	static const int16 target_exemptions[] = { 382, 458, 459, 460, 731, 1650, 1651, 1652 };
 
-	bool limit_all_aoes = false;
-
-	if (caster->IsNPC())
-		MAX_TARGETS_ALLOWED = 999;
-
-	if (caster->IsClient())
+	int MAX_TARGETS_ALLOWED   = 999;
+	bool enforce_aoe_limit    = false;
+	bool check_attack_allowed = true;
+	
+	if (!caster->IsNPC())
 	{
-		if (caster->CastToClient()->Admin() == 0 && entity_list.GetClientCount() >= RuleI(Quarm, AOEThrottlingMaxClients))
+		if (detrimental)
 		{
-			MAX_TARGETS_ALLOWED = RuleI(Quarm, AOEThrottlingMaxAOETargets);
-			limit_all_aoes = true;
-		}
-	}
-
-	if (!caster->IsNPC() && HasDirectDamageEffect(spell_id))
-	{
-		// Damage Spells were limited to 4 targets.
-		bool exempt = false;
-		int8 size = sizeof(target_exemptions) / sizeof(target_exemptions[0]);
-		for (int i = 0; i < size; i++) {
-			if (spell_id == target_exemptions[i])
+			// All non-targetable, damaging Bard songs are subject to Bard limiters
+			if (RuleB(Quarm, EnableBardDamagingAOECap) && IsBardAOEDamageSpell(spell_id) && !IsTargetableAESpell(spell_id))
 			{
-				exempt = true;
-				break;
+				MAX_TARGETS_ALLOWED = RuleI(Quarm, BardDamagingAOECap);
+				enforce_aoe_limit   = true;
+			}
+			// PBAE spells
+			else if (spells[spell_id].targettype == ST_AECaster)
+			{
+				check_attack_allowed = false;
+				
+				if (RuleB(Quarm, LimitPBAOEDetrimentalSpells)) 
+				{
+					MAX_TARGETS_ALLOWED = RuleI(Quarm, AOEMaxHostilePBAOETargets);
+					enforce_aoe_limit   = true;
+				}
+			}
+			// Any damage spell is limited to 4 targets (5 for Wizard Al'Kabor lines)
+			// Any targetable AE spell, except Harmony and non-mez blurring spells are limited to 4 targets
+			// This will also catch Bard song Denon's Desperate Dirge as it's targetable
+			else if (HasDirectDamageEffect(spell_id) || (IsTargetableAESpell(spell_id) && !IsHarmonySpell(spell_id) && (!IsMemBlurSpell(spell_id) || IsMezSpell(spell_id))))
+			{
+				MAX_TARGETS_ALLOWED = 4;
+				enforce_aoe_limit   = true;
+				
+				int8 size = sizeof(target_exemptions) / sizeof(target_exemptions[0]);
+				
+				for (int i = 0; i < size; i++) {
+					if (spell_id == target_exemptions[i])
+					{
+						MAX_TARGETS_ALLOWED = 5;
+						break;
+					}
+				}
 			}
 		}
-
-		if (!exempt)
+		
+		// Throttle max targets if it's higher than the throttle and the throttle is active
+		if (caster->IsClient() && (MAX_TARGETS_ALLOWED > RuleI(Quarm, AOEThrottlingMaxAOETargets)))
 		{
-			MAX_TARGETS_ALLOWED = 4;
+			if (caster->CastToClient()->Admin() == 0 && entity_list.GetClientCount() >= RuleI(Quarm, AOEThrottlingMaxClients))
+			{
+				MAX_TARGETS_ALLOWED = RuleI(Quarm, AOEThrottlingMaxAOETargets);
+				enforce_aoe_limit   = true;
+			}
 		}
 	}
-
-
-	if (!caster->IsNPC() && !limit_all_aoes && IsDetrimentalSpell(spell_id) && spells[spell_id].targettype == ST_AECaster && RuleB(Quarm, LimitPBAOEDetrimentalSpells))
-	{
-		MAX_TARGETS_ALLOWED = RuleI(Quarm, AOEMaxHostilePBAOETargets);
-		limit_all_aoes = true;
-	}
-
+	
 	int targets_hit = 0;
+	
 	if (center->IsBeacon())
+	{
 		targets_hit = center->CastToBeacon()->GetTargetsHit();
+	}
 
 	for (auto it = mob_list.begin(); it != mob_list.end(); ++it) {
 		curmob = it->second;
@@ -1202,57 +1220,25 @@ void EntityList::AESpell(Mob *caster, Mob *center, uint16 spell_id, bool affect_
 
 		uint16 ae_caster_id = center && !initial_cast ? center->GetID() : 0;
 
-		//if we get here... cast the spell.
-
-		bool enable_bard_limit = RuleB(Quarm, EnableBardDamagingAOECap);
-
-		if (IsTargetableAESpell(spell_id) && detrimental && !IsHarmonySpell(spell_id) && (!IsMemBlurSpell(spell_id) || IsMezSpell(spell_id))) 
+		// If we get here... cast the spell.
+		
+		// We only cast on non-clients and non-GM clients
+		if (!curmob->IsClient() || (curmob->IsClient() && !curmob->CastToClient()->GetHideMe()))
 		{
-			if (targets_hit < MAX_TARGETS_ALLOWED || curmob->IsClient() && !curmob->CastToClient()->GetHideMe())
-			{
-				caster->SpellOnTarget(spell_id, curmob, false, true, resist_adjust, false, ae_caster_id);
-				if (curmob->IsNPC() && caster->IsAttackAllowed(curmob, true, spell_id))
-					++targets_hit;
-				LogSpellsDetail("Targeted AE Spell: {} has hit target #{}/{}: {}", spell_id, targets_hit, MAX_TARGETS_ALLOWED, curmob->GetCleanName());
-			}
-			else if (targets_hit >= MAX_TARGETS_ALLOWED)
+			// We've reached an enforced limit
+			if (enforce_aoe_limit && targets_hit >= MAX_TARGETS_ALLOWED)
 			{
 				break;
 			}
-		}
-		else if (!caster->IsNPC() && enable_bard_limit && IsBardAOEDamageSpell(spell_id))
-		{
-			uint32 bard_aoe_cap = RuleI(Quarm, BardDamagingAOECap);
-			if (targets_hit < bard_aoe_cap || curmob->IsClient() && !curmob->CastToClient()->GetHideMe())
+			
+			// Cast the spell
+			caster->SpellOnTarget(spell_id, curmob, false, true, resist_adjust, false, ae_caster_id);
+			
+			// If we're an NPC and we can attack anything (PBAE) or we're targeted/songs and we have to check if we can attack
+			if (curmob->IsNPC() && (!check_attack_allowed || (check_attack_allowed && caster->IsAttackAllowed(curmob, true, spell_id))))
 			{
-				caster->SpellOnTarget(spell_id, curmob, false, true, resist_adjust, false, ae_caster_id);
-				if (curmob->IsNPC() && caster->IsAttackAllowed(curmob, true, spell_id))
-					++targets_hit;
-				LogSpellsDetail("Bard Damaging AE Spell: {} has hit target #{}/{}: {}", spell_id, targets_hit, bard_aoe_cap, curmob->GetCleanName());
-			}
-			else if(targets_hit >= bard_aoe_cap)
-			{
-				break;
-			}
-		}
-		else 
-		{
-			if (curmob->IsClient() && curmob->CastToClient()->GetHideMe())
-			{
-				LogSpellsDetail("PB AE Spell: Skipping GM {} with spell {}", curmob->GetCleanName(), spell_id);
-			}
-			else
-			{
-				LogSpellsDetail("PB AE Spell: {} has hit target {} [#{}/{}]", spell_id, curmob->GetCleanName(), targets_hit + 1, MAX_TARGETS_ALLOWED);
-				caster->SpellOnTarget(spell_id, curmob, false, true, resist_adjust, false, ae_caster_id);
-				if (limit_all_aoes)
-				{
-					if(curmob->IsNPC())
-						++targets_hit;
-
-					if (targets_hit >= MAX_TARGETS_ALLOWED)
-						break;
-				}
+				++targets_hit;
+				LogSpellsDetail("AE Spell: {} has hit target #{}/{}: {}", spell_id, targets_hit, MAX_TARGETS_ALLOWED, curmob->GetCleanName());
 			}
 		}
 	}
