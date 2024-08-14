@@ -1222,24 +1222,26 @@ void EntityList::AESpell(Mob *caster, Mob *center, uint16 spell_id, bool affect_
 
 		// If we get here... cast the spell.
 		
-		// We only cast on non-clients and non-GM clients
-		if (!curmob->IsClient() || (curmob->IsClient() && !curmob->CastToClient()->GetHideMe()))
+		// We do not cast on hidden clients (typically GMs)
+		if (curmob->IsClient() && !curmob->CastToClient()->GetHideMe())
 		{
-			// We've reached an enforced limit
-			if (enforce_aoe_limit && targets_hit >= MAX_TARGETS_ALLOWED)
-			{
-				break;
-			}
-			
-			// Cast the spell
-			caster->SpellOnTarget(spell_id, curmob, false, true, resist_adjust, false, ae_caster_id);
-			
-			// If we're an NPC and we can attack anything (PBAE) or we're targeted/songs and we have to check if we can attack
-			if (curmob->IsNPC() && (!check_attack_allowed || (check_attack_allowed && caster->IsAttackAllowed(curmob, true, spell_id))))
-			{
-				++targets_hit;
-				LogSpellsDetail("AE Spell: {} has hit target #{}/{}: {}", spell_id, targets_hit, MAX_TARGETS_ALLOWED, curmob->GetCleanName());
-			}
+			continue;
+		}
+		
+		// We've reached an enforced limit
+		if (enforce_aoe_limit && targets_hit >= MAX_TARGETS_ALLOWED)
+		{
+			break;
+		}
+		
+		// Cast the spell
+		caster->SpellOnTarget(spell_id, curmob, false, true, resist_adjust, false, ae_caster_id);
+		
+		// If the target is an NPC and we can hit anything (PBAE) or we're targeted/songs and we have to check if we can attack
+		if (curmob->IsNPC() && (!check_attack_allowed || caster->IsAttackAllowed(curmob, true, spell_id)))
+		{
+			++targets_hit;
+			LogSpellsDetail("AE Spell: {} has hit target #{}/{}: {}", spell_id, targets_hit, MAX_TARGETS_ALLOWED, curmob->GetCleanName());
 		}
 	}
 
