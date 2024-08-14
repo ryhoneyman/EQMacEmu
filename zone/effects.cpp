@@ -1017,7 +1017,7 @@ void EntityList::AESpell(Mob *caster, Mob *center, uint16 spell_id, bool affect_
 
 	int MAX_TARGETS_ALLOWED   = 999;
 	bool enforce_aoe_limit    = false;
-	bool check_attack_allowed = true;
+	bool check_attack_allowed = false;
 	
 	if (!caster->IsNPC())
 	{
@@ -1026,27 +1026,24 @@ void EntityList::AESpell(Mob *caster, Mob *center, uint16 spell_id, bool affect_
 			// All non-targetable, damaging Bard songs are subject to Bard limiters
 			if (RuleB(Quarm, EnableBardDamagingAOECap) && IsBardAOEDamageSpell(spell_id) && !IsTargetableAESpell(spell_id))
 			{
-				MAX_TARGETS_ALLOWED = RuleI(Quarm, BardDamagingAOECap);
-				enforce_aoe_limit   = true;
+				MAX_TARGETS_ALLOWED  = RuleI(Quarm, BardDamagingAOECap);
+				enforce_aoe_limit    = true;
+				check_attack_allowed = true;
 			}
 			// PBAE spells and targetable harmony or non-mez memblur spells
-			else if (spells[spell_id].targettype == ST_AECaster || (IsTargetableAESpell(spell_id) && (IsHarmonySpell(spell_id) || (IsMemBlurSpell(spell_id) && !IsMezSpell(spell_id)))))
+			else if (RuleB(Quarm, LimitPBAOEDetrimentalSpells) && (spells[spell_id].targettype == ST_AECaster || (IsTargetableAESpell(spell_id) && (IsHarmonySpell(spell_id) || (IsMemBlurSpell(spell_id) && !IsMezSpell(spell_id))))))
 			{
-				check_attack_allowed = false;
-				
-				if (RuleB(Quarm, LimitPBAOEDetrimentalSpells)) 
-				{
-					MAX_TARGETS_ALLOWED = RuleI(Quarm, AOEMaxHostilePBAOETargets);
-					enforce_aoe_limit   = true;
-				}
+				MAX_TARGETS_ALLOWED = RuleI(Quarm, AOEMaxHostilePBAOETargets);
+				enforce_aoe_limit   = true;
 			}
 			// Any damage spell is limited to 4 targets (5 for Wizard Al'Kabor lines)
 			// Any targetable AE spell is limited to 4 targets
 			// This will also catch Bard song Denon's Desperate Dirge as it's targetable
 			else if (HasDirectDamageEffect(spell_id) || IsTargetableAESpell(spell_id))
 			{
-				MAX_TARGETS_ALLOWED = 4;
-				enforce_aoe_limit   = true;
+				MAX_TARGETS_ALLOWED  = 4;
+				enforce_aoe_limit    = true;
+				check_attack_allowed = true;
 				
 				int8 size = sizeof(target_exemptions) / sizeof(target_exemptions[0]);
 				
