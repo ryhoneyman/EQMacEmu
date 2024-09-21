@@ -13,9 +13,6 @@
 #ifndef RULE_BOOL
 #define RULE_BOOL(cat, rule, default_value, notes)
 #endif
-#ifndef RULE_STRING
-#define RULE_STRING(cat, rule, default_value, notes)
-#endif
 #ifndef RULE_CATEGORY_END
 #define RULE_CATEGORY_END()
 #endif
@@ -288,7 +285,6 @@ RULE_REAL(Quarm, BonusGroupEXP5MemberOverride, 1.14, "Quarm's custom group EXP b
 RULE_REAL(Quarm, BonusGroupEXP6MemberOverride, 1.20, "Quarm's custom group EXP bonus override for x members. For server events that directly target group bonuses.")
 RULE_REAL(Quarm, BonusGroupEXP7MemberOverride, 1.24, "Quarm's custom group EXP bonus override for x members. For server events that directly target group bonuses.")
 RULE_INT(Quarm, MaxTimeSpentProcessingConns, 100, "")
-RULE_STRING(Quarm, SpellTimerOverrideList, "2570:480,2510:480,2895:480,2528:480,2590:480,2629:480,1561:480", "Spell Timer Overrides: ID:MIN,ID:MIN,...")
 RULE_CATEGORY_END()
 RULE_CATEGORY( Map )
 //enable these to help prevent mob hopping when they are pathing
@@ -539,5 +535,4 @@ RULE_CATEGORY_END()
 #undef RULE_INT
 #undef RULE_REAL
 #undef RULE_BOOL
-#undef RULE_STRING
 #undef RULE_CATEGORY_END
