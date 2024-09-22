@@ -13,6 +13,9 @@
 #ifndef RULE_BOOL
 #define RULE_BOOL(cat, rule, default_value, notes)
 #endif
+#ifndef RULE_STRING
+#define RULE_STRING(cat, rule, default_value, notes)
+#endif
 #ifndef RULE_CATEGORY_END
 #define RULE_CATEGORY_END()
 #endif
@@ -287,6 +290,7 @@ RULE_REAL(Quarm, BonusGroupEXP7MemberOverride, 1.24, "Quarm's custom group EXP b
 RULE_INT(Quarm, MaxTimeSpentProcessingConns, 100, "")
 RULE_BOOL(Quarm, ClientFactionOverride, true, "Enables or disables client personal faction adjustment")
 RULE_REAL(Quarm, ClientFactionMultiplier, 1.5, "Client personal faction adjustment multiplier")
+RULE_STRING(Quarm, SpellTimerOverrideList, "2570:4800,2510:4800,2895:4800,2528:4800,2590:4800,2629:4800,1561:4800", "Spell Timer Overrides: ID:TIC,ID:TIC,...")
 RULE_CATEGORY_END()
 RULE_CATEGORY( Map )
 //enable these to help prevent mob hopping when they are pathing
@@ -537,4 +541,5 @@ RULE_CATEGORY_END()
 #undef RULE_INT
 #undef RULE_REAL
 #undef RULE_BOOL
+#undef RULE_STRING
 #undef RULE_CATEGORY_END
