@@ -2504,7 +2504,7 @@ int CalcBuffDuration_modification(int spell_id, int duration, bool isClient)
 	
 	// Modifier list, if set, will look like - ID:TIC,ID:TIC,ID:MULTx,...,-:MULTx,+:MULTx,*:MULTx
 	// 'ID' is a single spell, '*' means all spells, '-' means detrimental spells, '+' means beneficial spells
-	const std::string spellTimerModifierList = RuleS(Quarm, ClientSpellDurationModifierList);
+	const std::string spellTimerModifierList = (isClient) ? RuleS(Quarm, ClientSpellDurationModifierList) : RuleS(Quarm, NPCSpellDurationModifierList);
 	
 	Log(Logs::Detail, Logs::Spells, "Phase 2c");
 	
