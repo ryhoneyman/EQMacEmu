@@ -2527,7 +2527,7 @@ int CalcBuffDuration_modification(int spell_id, int duration, bool isClient)
 		std::string spellModifierKey   = spellIdTimerModifierProp[0];  // Left part of the entry - (L):R
 		std::string spellModifierValue = spellIdTimerModifierProp[1];  // Right part of the entry - L:(R)
 		std::string checkMultiplier    = Strings::Replace(spellModifierValue, "x", "");
-		bool isMultiplier              = (checkMultiplier == spellModifierValue);
+		bool isMultiplier              = (checkMultiplier != spellModifierValue);
 		
 		Log(Logs::Detail, Logs::Spells, "Phase 2d - %s = %s", spellModifierKey.c_str(), spellModifierValue.c_str());
 
