@@ -715,6 +715,7 @@ int CanUseSpell(uint16 spellid, int classa, int level);
 int GetMinLevel(uint16 spell_id);
 int GetSpellLevel(uint16 spell_id, int classa);
 int CalcBuffDuration_formula(int level, int formula, int duration);
+int CalcBuffDuration_modification(int spell_id, int duration, bool isClient);
 int32 CalculatePoisonCounters(uint16 spell_id);
 int32 CalculateDiseaseCounters(uint16 spell_id);
 int32 CalculateCurseCounters(uint16 spell_id);
