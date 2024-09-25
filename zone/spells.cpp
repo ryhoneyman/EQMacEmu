@@ -2526,8 +2526,8 @@ int CalcBuffDuration_modification(int spell_id, int duration, bool isClient)
 		
 		std::string spellModifierKey   = spellIdTimerModifierProp[0];  // Left part of the entry - (L):R
 		std::string spellModifierValue = spellIdTimerModifierProp[1];  // Right part of the entry - L:(R)
-		std::string checkMultiplier    = Strings::Replace(spellModifierValue, "x", "");
-		bool isMultiplier              = (checkMultiplier != spellModifierValue);
+		std::string modifyValue        = Strings::Replace(spellModifierValue, "x", "");
+		bool isMultiplier              = (modifyValue != spellModifierValue);
 		
 		Log(Logs::Detail, Logs::Spells, "Phase 2d - %s = %s", spellModifierKey.c_str(), spellModifierValue.c_str());
 
@@ -2553,11 +2553,11 @@ int CalcBuffDuration_modification(int spell_id, int duration, bool isClient)
 		}
 		
 		// If we aren't a float/integer then this is not a valid modification, so skip
-		if (!Strings::IsFloat(checkMultiplier)) {
+		if (!Strings::IsFloat(modifyValue)) {
 			continue;
 		}
 		
-		float spellTimerValue = std::stof(checkMultiplier);
+		float spellTimerValue = std::stof(modifyValue);
 		
 		// We didn't get a spell ID, so this is a aggregator
 		if (spellIdModifier == 0)
