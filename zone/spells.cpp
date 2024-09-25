@@ -2487,12 +2487,15 @@ int Mob::CalcBuffDuration(Mob *caster, Mob *target, uint16 spell_id, int32 caste
 
 int CalcBuffDuration_modification(int spell_id, int duration, bool isClient)
 {
-	Log(Logs::Detail, Logs::Spells, "Phase 2a");
 	const bool spellDetrimental = IsDetrimentalSpell(spell_id);
 	const bool spellBeneficial  = IsBeneficialSpell(spell_id);
 	
-	Log(Logs::Detail, Logs::Spells, "Phase 2b");
-	
+	// Stop all spells that should never have durations modified
+	if (spellDetrimental && IsSplurtFormulaSpell(spell_id))
+	{
+		return duration;
+	}
+		
 	// Not enabled for caster and type
 	if (
 		(isClient  && ((spellDetrimental && !RuleB(Quarm, ClientDetrimentalSpellDurationModifier)) || (spellBeneficial && !RuleB(Quarm, ClientBeneficialSpellDurationModifier)))) ||
@@ -2506,15 +2509,11 @@ int CalcBuffDuration_modification(int spell_id, int duration, bool isClient)
 	// 'ID' is a single spell, '*' means all spells, '-' means detrimental spells, '+' means beneficial spells
 	const std::string spellTimerModifierList = (isClient) ? RuleS(Quarm, ClientSpellDurationModifierList) : RuleS(Quarm, NPCSpellDurationModifierList);
 	
-	Log(Logs::Detail, Logs::Spells, "Phase 2c");
-	
 	// Didn't have a modifier list
 	if (spellTimerModifierList.empty())
 	{
 		return duration;
 	}
-	
-	Log(Logs::Detail, Logs::Spells, "Phase 2d");
 		
 	// Split the list on commas, then split those entries on colon
 	for (const auto &spellIdTimerModifier : Strings::Split(spellTimerModifierList, ',')) {
@@ -2528,8 +2527,6 @@ int CalcBuffDuration_modification(int spell_id, int duration, bool isClient)
 		std::string spellModifierValue = spellIdTimerModifierProp[1];  // Right part of the entry - L:(R)
 		std::string modifyValue        = Strings::Replace(spellModifierValue, "x", "");
 		bool isMultiplier              = (modifyValue != spellModifierValue);
-		
-		Log(Logs::Detail, Logs::Spells, "Phase 2d: %s = %s", spellModifierKey.c_str(), spellModifierValue.c_str());
 
 		// Spell ID or 0 for aggregator (either +, -, or *)
 		int spellIdModifier = (Strings::IsNumber(spellModifierKey) && spellModifierKey != "-") ? std::stoul(spellModifierKey) : 0;
@@ -2573,25 +2570,16 @@ int CalcBuffDuration_modification(int spell_id, int duration, bool isClient)
 				continue;
 			}
 		}
-		
-		// Stop all detrimental spells that should never have durations modified
-		if (spellDetrimental)
-		{
-			if (IsSplurtFormulaSpell(spell_id))
-			{
-				continue;
-			}
-		}
-		
-		// Perform the modification
 				
+		// Perform the modification	
 		if (isMultiplier)
 		{
 			duration = static_cast<int>(duration * spellTimerValue);
 		}
 		else
 		{
-			duration = static_cast<int>(spellTimerValue);
+			// Using 0 as the modifier will force the spell to use it's original duration
+			duration = (spellTimerValue == 0) ? duration : static_cast<int>(spellTimerValue);
 		}
 		
 		Log(Logs::Detail, Logs::Spells, "Spell duration modification applied! spell_id:%d, matched:%s, value:%s, duration:%d", spell_id, spellModifierKey.c_str(), spellModifierValue.c_str(), duration);
@@ -2600,9 +2588,7 @@ int CalcBuffDuration_modification(int spell_id, int duration, bool isClient)
 		// This means the global wildcards '+,-,*' must be at the end of the list so that specific spells can be applied prior
 		break;
 	}
-	
-	Log(Logs::Detail, Logs::Spells, "Phase 2e");
-	
+
 	return duration;
 }
 
