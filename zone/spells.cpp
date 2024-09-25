@@ -2570,21 +2570,23 @@ int CalcBuffDuration_modification(int spell_id, int duration, bool isClient)
 				continue;
 			}
 		}
-				
-		// Perform the modification	
-		if (isMultiplier)
-		{
-			duration = static_cast<int>(duration * spellTimerValue);
-		}
-		else
-		{
-			// Using 0 as the modifier will force the spell to use it's original duration
-			duration = (spellTimerValue == 0) ? duration : static_cast<int>(spellTimerValue);
-		}
 		
-		Log(Logs::Detail, Logs::Spells, "Spell duration modification applied! spell_id:%d, matched:%s, value:%s, duration:%d", spell_id, spellModifierKey.c_str(), spellModifierValue.c_str(), duration);
-		
-		// If we get a match, there's no need to continue through the list.
+		// Perform the modification if we have a positive value	
+		if (spellTimerValue > 0)
+		{
+			if (isMultiplier)
+			{
+				duration = static_cast<int>(duration * spellTimerValue);
+			}
+			else
+			{
+				duration = static_cast<int>(spellTimerValue);
+			}
+			
+			Log(Logs::Detail, Logs::Spells, "Spell duration modification applied! spell_id:%d, matched:%s, value:%s, duration:%d", spell_id, spellModifierKey.c_str(), spellModifierValue.c_str(), duration);
+		}
+			
+		// If we get a match, there's no need to continue through the list
 		// This means the global wildcards '+,-,*' must be at the end of the list so that specific spells can be applied prior
 		break;
 	}
