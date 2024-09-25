@@ -2430,10 +2430,14 @@ int Mob::CalcBuffDuration(Mob *caster, Mob *target, uint16 spell_id, int32 caste
 		castlevel = caster_level_override;
 
 	int res = CalcBuffDuration_formula(castlevel, formula, duration);
+	
+	Log(Logs::Detail, Logs::Spells, "Phase 1");
 
 	if (caster && formula != DF_Permanent)
 	{
+		Log(Logs::Detail, Logs::Spells, "Phase 2");
 		res = CalcBuffDuration_modification(spell_id, duration, caster->IsClient());
+		Log(Logs::Detail, Logs::Spells, "Phase 3");
 		
 		if (caster->IsClient() && IsBeneficialSpell(spell_id))
 		{	
@@ -2483,8 +2487,11 @@ int Mob::CalcBuffDuration(Mob *caster, Mob *target, uint16 spell_id, int32 caste
 
 int CalcBuffDuration_modification(int spell_id, int duration, bool isClient)
 {
+	Log(Logs::Detail, Logs::Spells, "Phase 2a");
 	const bool spellDetrimental = IsDetrimentalSpell(spell_id);
 	const bool spellBeneficial  = IsBeneficialSpell(spell_id);
+	
+	Log(Logs::Detail, Logs::Spells, "Phase 2b");
 	
 	// Not enabled for caster and type
 	if (
@@ -2499,11 +2506,15 @@ int CalcBuffDuration_modification(int spell_id, int duration, bool isClient)
 	// 'ID' is a single spell, '*' means all spells, '-' means detrimental spells, '+' means beneficial spells
 	const std::string spellTimerModifierList = RuleS(Quarm, ClientSpellDurationModifierList);
 	
+	Log(Logs::Detail, Logs::Spells, "Phase 2c");
+	
 	// Didn't have a modifier list
 	if (spellTimerModifierList.empty())
 	{
 		return duration;
 	}
+	
+	Log(Logs::Detail, Logs::Spells, "Phase 2d");
 		
 	// Split the list on commas, then split those entries on colon
 	for (const auto &spellIdTimerModifier : Strings::Split(spellTimerModifierList, ',')) {
@@ -2517,6 +2528,8 @@ int CalcBuffDuration_modification(int spell_id, int duration, bool isClient)
 		std::string spellModifierValue = spellIdTimerModifierProp[1];  // Right part of the entry - L:(R)
 		std::string checkMultiplier    = Strings::Replace(spellModifierValue, "x", "");
 		bool isMultiplier              = (checkMultiplier == spellModifierValue);
+		
+		Log(Logs::Detail, Logs::Spells, "Phase 2d - %s = %s", spellModifierKey, spellModifierValue);
 
 		// Spell ID or 0 for aggregator (either +, -, or *)
 		int spellIdModifier = Strings::IsNumber(spellModifierKey) ? std::stoul(spellModifierKey) : 0;
@@ -2587,6 +2600,8 @@ int CalcBuffDuration_modification(int spell_id, int duration, bool isClient)
 		// This means the global wildcards '+,-,*' must be at the end of the list so that specific spells can be applied prior
 		break;
 	}
+	
+	Log(Logs::Detail, Logs::Spells, "Phase 2e");
 	
 	return duration;
 }
