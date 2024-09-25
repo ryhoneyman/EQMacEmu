@@ -4729,7 +4729,7 @@ int32 Client::UpdatePersonalFaction(int32 char_id, int32 npc_value, int32 factio
 
 	if (hit != 0)
 	{	
-		if (RuleB(Quarm, ClientFactionOverride))
+		if (RuleB(Quarm, ClientFactionModifier))
 		{
 			const float factionMultiplier = RuleR(Quarm, ClientFactionMultiplier);
 			
