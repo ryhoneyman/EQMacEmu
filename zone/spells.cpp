@@ -2529,10 +2529,10 @@ int CalcBuffDuration_modification(int spell_id, int duration, bool isClient)
 		std::string modifyValue        = Strings::Replace(spellModifierValue, "x", "");
 		bool isMultiplier              = (modifyValue != spellModifierValue);
 		
-		Log(Logs::Detail, Logs::Spells, "Phase 2d - %s = %s", spellModifierKey.c_str(), spellModifierValue.c_str());
+		Log(Logs::Detail, Logs::Spells, "Phase 2d: %s = %s", spellModifierKey.c_str(), spellModifierValue.c_str());
 
 		// Spell ID or 0 for aggregator (either +, -, or *)
-		int spellIdModifier = Strings::IsNumber(spellModifierKey) ? std::stoul(spellModifierKey) : 0;
+		int spellIdModifier = (Strings::IsNumber(spellModifierKey) && spellModifierKey != "-") ? std::stoul(spellModifierKey) : 0;
 		
 		// Unknown aggregator was specified
 		if (spellIdModifier == 0 && (spellModifierKey != "+" && spellModifierKey != "-" && spellModifierKey != "*"))
